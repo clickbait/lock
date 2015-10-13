@@ -8,6 +8,11 @@ function lock_hide($params, $content) {
 		return false;
 	}
 
+  // return nothing if the print thread page is viewed
+  if(empty($post['pid'])) {
+    return 'Hidden Content';
+  }
+
   // does the user have to pay for the content?
   if($mybb->settings['lock_purchases_enabled'] == true || (Int)$mybb->settings['lock_default_price'] > 0) {
 
