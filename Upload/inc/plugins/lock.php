@@ -33,7 +33,7 @@ if(!empty($mybb->input['highlight']))
 
 if(!class_exists('Shortcodes'))
 {
-	require __DIR__ . '/lock/shortcodes.class.php';
+  require __DIR__ . '/lock/shortcodes.class.php';
 }
 
 function lock_install()
