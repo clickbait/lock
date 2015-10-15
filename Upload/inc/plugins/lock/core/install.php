@@ -2,10 +2,10 @@
 
 // add a new setting group for Lock
 $new_setting_group = array(
-"name" => "lock",
-"title" => "Lock Settings",
-"disporder" => 1,
-"isdefault" => 0
+  "name" => "lock",
+  "title" => "Lock Settings",
+  "disporder" => 1,
+  "isdefault" => 0
 );
 
 $gid = $db->insert_query("settinggroups", $new_setting_group);
@@ -81,7 +81,8 @@ $settings[] = array(
 );
 
 // add the settings into the database.
-foreach($settings as $data) {
+foreach($settings as $data)
+{
     $db->insert_query("settings", $data);
 }
 
@@ -97,7 +98,8 @@ $templates['lock_wrapper'] = '<div class="hidden-content">
 </div>';
 
 // insert the template into the database
-foreach($templates as $title => $template) {
+foreach($templates as $title => $template)
+{
   $new_template = array(
     'title' => $db->escape_string($title),
     'template' => $db->escape_string($template),
@@ -105,6 +107,7 @@ foreach($templates as $title => $template) {
     'version' => '1800',
     'dateline' => TIME_NOW
   );
+
   $db->insert_query('templates', $new_template);
 }
 

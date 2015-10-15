@@ -1,12 +1,14 @@
 <?php
 
 // if the action is not purchase, we don't need to continue.
-if($_POST['action'] !== 'purchase') {
+if($_POST['action'] !== 'purchase')
+{
   return;
 }
 
 // if the purchases functionality has not been enabled, we do not need to continue.
-if($mybb->settings['lock_purchases_enabled'] != true) {
+if($mybb->settings['lock_purchases_enabled'] != true)
+{
   return;
 }
 
@@ -20,10 +22,12 @@ $pcrypt = new pcrypt(MODE_ECB, "BLOWFISH", $key);
 $json = $pcrypt->decrypt(base64_decode($_POST['info']));
 
 // if the data is indeed json data
-if($info = json_decode($json)) {
+if($info = json_decode($json))
+{
 
   // if the data has been successfully turned back into an object.
-  if (is_object($info)) {
+  if (is_object($info))
+  {
 
     // if the cost and post id are not numbers, return an error.
     if(!is_numeric($info->cost) || !is_numeric($info->pid)) {
@@ -36,33 +40,41 @@ if($info = json_decode($json)) {
 
     $allowed = explode(',', $post['unlocked']);
 
-    if(!is_array($allowed)) {
+    if(!is_array($allowed))
+    {
       $allowed = array();
     }
 
-    if(!in_array($mybb->user['uid'], $allowed)) {
+    if(!in_array($mybb->user['uid'], $allowed))
+    {
 
       // user doesn't have it unlocked
-      if($mybb->user['newpoints'] < $info->cost) {
+      if($mybb->user['newpoints'] < $info->cost)
+      {
 
         // user does not have enough funds to pay for the item
         error('You do not have enough points to purchase this item.');
-      } else {
+      }
+      else
+      {
 
         // take the points from the user
         newpoints_addpoints($mybb->user['uid'], -$info->cost);
 
         $mybb->settings['lock_tax'] = $mybb->settings['lock_tax'];
 
-        if(is_numeric($mybb->settings['lock_tax']) && $mybb->settings['lock_tax'] > 0) {
+        if(is_numeric($mybb->settings['lock_tax']) && $mybb->settings['lock_tax'] > 0)
+        {
           $tax = $mybb->settings['lock_tax'];
         }
 
-        if(isset($tax) && $tax > 100) {
+        if(isset($tax) && $tax > 100)
+        {
           $tax = 100;
         }
 
-        if(is_numeric($tax)) {
+        if(is_numeric($tax))
+        {
           $info->cost = $info->cost - ($info->cost / 100 * $tax);
         }
 
@@ -83,7 +95,8 @@ if($info = json_decode($json)) {
 
       // now, check that the post actually exists
     $query = $db->simple_select('posts', '*', "pid = '{$info->pid}'");
-    if ($db->num_rows($query)) {
+    if ($db->num_rows($query))
+    {
 
       // if it does, redirect the user to the post.
       $post = $db->fetch_array($query);
@@ -91,7 +104,6 @@ if($info = json_decode($json)) {
 
       header("Location: ".$url);
       exit();
-
     }
   }
 }

@@ -4,7 +4,8 @@ $query = $db->simple_select("settinggroups", "gid", "name='lock'");
 $gid = $db->fetch_field($query, "gid");
 
 // if there's no settings group, stop.
-if(!$gid) {
+if(!$gid)
+{
     return;
 }
 
