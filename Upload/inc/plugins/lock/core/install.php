@@ -4,6 +4,7 @@
 $new_setting_group = array(
   "name" => "lock",
   "title" => "Lock Settings",
+  "description" => "Lock Settings Group",
   "disporder" => 1,
   "isdefault" => 0
 );
