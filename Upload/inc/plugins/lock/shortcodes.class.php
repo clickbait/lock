@@ -170,10 +170,28 @@ class Shortcodes {
 		{
 		  return;
 		}
+  
+		$post = get_post($info->pid);
+	
+		Shortcodes::get_higher_price_from_message($post['message'], $price);
 
-		$pattern = Shortcodes::shortcode_regex();
+		if($price > (int)$mybb->usergroup['lock_maxcost'])
+		{
+			isset($lang->lock) || $lang->load('lock');
+
+			$ph->set_error($lang->sprintf($lang->lock_permission_maxcost, newpoints_format_points((int)$mybb->usergroup['lock_maxcost'])));
+		}
+	}
+
+	public function get_higher_price_from_message($message, &$higher_price)
+	{
+		self::set_tag();
+
+		$pattern = self::shortcode_regex();
 
 		preg_match_all("/$pattern/s", $message, $matches, PREG_SET_ORDER);
+
+		$higher_price = 0;
 
 		foreach($matches as $match)
 		{
@@ -186,13 +204,9 @@ class Shortcodes {
 				continue;
 			}
 
-			if($price > (int)$mybb->usergroup['lock_maxcost'])
-			{
-				isset($lang->lock) || $lang->load('lock');
-
-				$ph->set_error($lang->sprintf($lang->lock_permission_maxcost, newpoints_format_points((int)$mybb->usergroup['lock_maxcost'])));
-				break;
-			}
+			$higher_price = max($higher_price, $price);
 		}
+
+		return $higher_price;
 	}
 } // END class Shortcodes

@@ -103,7 +103,7 @@ $PL->templates('lock', 'Lock', array(
 </div>',
   'form'  => '<form method="post">
 	{$lang->lock_purchase_desc}
-	<input type="submit" class="button" value="{$lock_purchase}" />
+	<input type="submit" class="button" value="{$lock_purchase}" onclick="javascript: return confirm(\'{$lang_confirm}\');" />
 	<input type="hidden" name="info" value="{$info}" />
 	<input type="hidden" name="action" value="purchase" />
 </form>',

@@ -125,7 +125,19 @@ function lock_hide($params, $content)
         // encrypt the json, and encode it as base64; so it can be submitted in a form.
         $info = base64_encode($pcrypt->encrypt($info));
 
-        $lock_purchase = $lang->sprintf($lang->lock_purchase, newpoints_format_points($cost));
+        static $posts_prices = array();
+
+        if(!isset($posts_prices[$post['pid']]))
+        {
+          $posts_prices[$post['pid']] = (int)$cost;
+        }
+
+        $posts_prices[$post['pid']] = max($posts_prices[$post['pid']], (int)$cost);
+
+        $points = newpoints_format_points($posts_prices[$post['pid']]);
+
+        $lang_confirm = $lang->sprintf($lang->lock_purchase_confirm, $points);
+        $lock_purchase = $lang->sprintf($lang->lock_purchase, $points);
 
         // build the return button.
         $return = eval($templates->render('lock_form', true, false));

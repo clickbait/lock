@@ -28,11 +28,16 @@ if($info = json_decode($json))
   // if the data has been successfully turned back into an object.
   if (is_object($info))
   {
-
     // if the cost and post id are not numbers, return an error.
     if(!is_numeric($info->cost) || !is_numeric($info->pid)) {
       error("Something went wrong: NaN");
     }
+  
+    $post = get_post($info->pid);
+
+    Shortcodes::get_higher_price_from_message($post['message'], $higher_price);
+
+    $info->cost = max($higher_price, $info->cost); // too much?
 
     // check whether the current user has already unlocked the content
     $query = $db->simple_select('posts', 'uid,unlocked', "pid='{$info->pid}'");
