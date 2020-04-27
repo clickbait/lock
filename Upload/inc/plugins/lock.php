@@ -1,15 +1,33 @@
 <?php
 
+if(THIS_SCRIPT == 'showthread.php')
+{
+  global $templatelist;
+
+  if(!isset($templatelist))
+  {
+    $templatelist = '';
+  }
+
+  $templatelist .= ',lock_wrapper,lock_form,';
+}
+// PLUGINLIBRARY
+defined('PLUGINLIBRARY') or define('PLUGINLIBRARY', MYBB_ROOT.'inc/plugins/pluginlibrary.php');
+
 function lock_info()
 {
+  global $lang;
+  isset($lang->lock) || $lang->load('lock');
+
   return array(
     'name' => 'Lock',
-    'description' => 'Hide tags on steroids',
-    'website' => 'https://mybb.solutions',
+    'description' => $lang->lock_desc,
+    'website' => 'https://github.com/neko',
     'author' => 'Neko',
-    'authorsite' => 'https://mybb.solutions',
-    'version' => '1.0',
+    'authorsite' => 'https://github.com/neko',
+    'version' => '1.1',
     'compatibility' => '18*',
+    'pl' => '13',
   );
 }
 
@@ -20,10 +38,19 @@ if(!defined('IN_ADMINCP'))
   $plugins->add_hook('parse_message', 'lock_highlight_end');
 
   // adds a new action method to MyBB.
-  $plugins->add_hook('global_intermediate', 'lock_purchase');
+  $plugins->add_hook('global_end', 'lock_purchase');
 
   // remove hide tags from quotes
   $plugins->add_hook('parse_quoted_message', 'lock_quoted');
+
+  // validate maximum cost
+  $plugins->add_hook('datahandler_post_validate_post', array('Shortcodes', 'validate_post'));
+  $plugins->add_hook('datahandler_post_validate_thread', array('Shortcodes', 'validate_post'));
+}
+else
+{
+  $plugins->add_hook('admin_formcontainer_end', 'lock_admin_formcontainer_end');
+  $plugins->add_hook('admin_user_groups_edit_commit', 'lock_admin_user_groups_edit_commit');
 }
 
 if(!empty($mybb->input['highlight']))
@@ -36,16 +63,37 @@ if(!class_exists('Shortcodes'))
   require __DIR__ . '/lock/shortcodes.class.php';
 }
 
-function lock_install()
+function lock_activate()
 {
-  global $db;
+  global $db, $PL, $lang;
+  lock_deactivate();
 
   require_once __DIR__ . '/lock/core/install.php';
 }
 
+function lock_deactivate()
+{
+  global $PL, $lang;
+
+  isset($lang->lock) || $lang->load('lock');
+
+  $info = lock_info();
+
+  if(file_exists(PLUGINLIBRARY))
+  {
+    $PL or require_once PLUGINLIBRARY;
+  }
+
+  if(!(file_exists(PLUGINLIBRARY) && $PL->version >= $info['pl']))
+  {
+    flash_message($lang->sprintf($lang->lock_pluginlibrary, $info['pl']['url'], $info['pl']), 'error');
+		admin_redirect('index.php?module=config-plugins');
+  }
+}
+
 function lock_uninstall()
 {
-  global $db;
+  global $db, $PL;
 
   require_once __DIR__ . '/lock/core/uninstall.php';
 }
@@ -54,15 +102,7 @@ function lock_is_installed()
 {
   global $db;
 
-  // check to see whether we have a settings group
-  $query = $db->simple_select("settinggroups", "*", "name='lock'");
-
-  if($db->num_rows($query)) {
-    // if there is, return true
-    return true;
-  }
-
-  return false;
+  return $db->field_exists('unlocked', 'posts');
 }
 
 function lock_highlight_start($message) {
@@ -95,9 +135,69 @@ function lock_purchase() {
 require_once __DIR__ . '/lock/core/shortcode.php';
 
 function lock_quoted(&$quoted_post) {
-  $quoted_post['message'] = preg_replace("#\[hide(.*)\[/hide\]#is",'', $quoted_post['message']);
+  Shortcodes::set_tag();
+  $quoted_post['message'] = preg_replace("#\[".Shortcodes::$tag."(.*)\[/".Shortcodes::$tag."\]#is",'', $quoted_post['message']);
 }
 
+// Hook: admin_formcontainer_end
+function lock_admin_formcontainer_end()
+{
+  global $run_module, $form_container, $lang;
 
+  if($run_module == 'user' && isset($form_container->_title) && $form_container->_title == $lang->users_permissions)
+  {
+    global $form, $mybb;
 
-?>
+    isset($lang->lock) || $lang->load('lock');
+
+    $perms = array();
+
+    $db_fields = lock_get_db_fields();
+
+    foreach($db_fields['usergroups'] as $name => $definition)
+    {
+      $perms[] = "<br />{$lang->lock_permission_maxcost}<br /><small>{$lang->lock_permission_maxcost_desc}</small><br />{$form->generate_text_box($name, $mybb->get_input($name, MyBB::INPUT_STRING), array('id' => $name, 'class' => 'field50'))}";
+    }
+
+    $form_container->output_row($lang->setting_group_lock, '', '<div class="group_settings_bit">'.implode('</div><div class="group_settings_bit">', $perms).'</div>');
+  }
+}
+
+// Hook: admin_user_groups_edit_commit
+function lock_admin_user_groups_edit_commit()
+{
+  global $updated_group, $mybb;
+
+  $db_fields = lock_get_db_fields();
+
+  foreach($db_fields['usergroups'] as $name => $definition)
+  {
+    $updated_group[$name] = $mybb->get_input($name, MyBB::INPUT_STRING);
+  }
+}
+
+function lock_get_db_fields()
+{
+  global $db;
+
+  // Create DB table
+  switch($db->type)
+  {
+    case 'pgsql':
+      $fields = array(
+        'usergroups'	=> array(
+          'lock_maxcost'		=> "VARCHAR(5) NOT NULL DEFAULT ''",
+        )
+      );
+      break;
+    default:
+      $fields = array(
+        'usergroups'	=> array(
+          'lock_maxcost'		=> "VARCHAR(5) NOT NULL DEFAULT ''",
+        )
+      );
+      break;
+  }
+
+  return $fields;
+}

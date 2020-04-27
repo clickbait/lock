@@ -17,11 +17,19 @@ class Shortcodes {
 
 	private static $shortcodes;
 	public static $strict;
+	public static $tag;
 
 	public function _construct()
 	{
 		$shortcodes = Array();
 		$strict = true;
+	}
+
+	public function set_tag()
+	{
+		global $mybb;
+
+		self::$tag = $mybb->settings['lock_type'] == 'hide' ? 'hide' : 'lock';
 	}
 
 	public static function add($shortcode, $function)
@@ -137,4 +145,54 @@ class Shortcodes {
 		return $atts;
 	}
 
+	function validate_post(&$ph)
+	{
+		global $mybb, $lang;
+
+		if(
+			$mybb->usergroup['lock_maxcost'] === '' ||
+			!function_exists('newpoints_format_points') ||
+			$ph->data['uid'] != $mybb->user['uid'] && is_moderator($ph->data['fid']) // but moderators could bypass this in others's posts? ...
+		)
+		{
+			return;
+		}
+
+		self::set_tag();
+	  
+		$message = $ph->data['message'];
+
+		if(
+		  empty(self::$shortcodes) ||
+		  !is_array(self::$shortcodes) ||
+		  my_strpos( $message, "[".self::$tag ) === false
+		)
+		{
+		  return;
+		}
+
+		$pattern = Shortcodes::shortcode_regex();
+
+		preg_match_all("/$pattern/s", $message, $matches, PREG_SET_ORDER);
+
+		foreach($matches as $match)
+		{
+			if(
+				empty( $match[0] ) ||
+				my_strpos( $match[0], "[".self::$tag."=" ) === false ||
+				!($price = (int)str_replace('=', '', $match[3]))
+			)
+			{
+				continue;
+			}
+
+			if($price > (int)$mybb->usergroup['lock_maxcost'])
+			{
+				isset($lang->lock) || $lang->load('lock');
+
+				$ph->set_error($lang->sprintf($lang->lock_permission_maxcost, newpoints_format_points((int)$mybb->usergroup['lock_maxcost'])));
+				break;
+			}
+		}
+	}
 } // END class Shortcodes

@@ -1,24 +1,24 @@
 <?php
-// fetch the settings group id from the settinggroups table
-$query = $db->simple_select("settinggroups", "gid", "name='lock'");
-$gid = $db->fetch_field($query, "gid");
 
-// if there's no settings group, stop.
-if(!$gid)
-{
-    return;
-}
+lock_deactivate();
 
-// remove all lock settings from the database
-$db->delete_query("settinggroups", "name='lock'");
-$db->delete_query("settings", "gid=$gid");
+// Delete settings
+$PL->settings_delete('lock');
 
 // remove the unlocked column from the posts table.
-$db->query("ALTER TABLE ".TABLE_PREFIX."posts DROP `unlocked`");
+!$db->field_exists('unlocked', 'posts') or $db->drop_column('posts', 'unlocked');
 
-// remove the Lock template
-$db->delete_query("templates", "title IN('lock_wrapper')");
+// Delete template group
+$PL->templates_delete('lock');
 
-// rebuild settings
-rebuild_settings();
-?>
+// Remove DB fields
+foreach(lock_get_db_fields() as $table => $fields)
+{
+  foreach($fields as $name => $definition)
+  {
+    if($db->field_exists($name, $table))
+    {
+      $db->drop_column($table, $name);
+    }
+  }
+}

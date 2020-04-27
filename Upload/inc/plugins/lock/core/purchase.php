@@ -1,7 +1,7 @@
 <?php
 
 // if the action is not purchase, we don't need to continue.
-if($_POST['action'] !== 'purchase')
+if($mybb->input['action'] !== 'purchase')
 {
   return;
 }
@@ -35,7 +35,7 @@ if($info = json_decode($json))
     }
 
     // check whether the current user has already unlocked the content
-    $query = $db->write_query("SELECT uid,unlocked FROM ".TABLE_PREFIX."posts WHERE pid='{$info->pid}'");
+    $query = $db->simple_select('posts', 'uid,unlocked', "pid='{$info->pid}'");
     $post = $db->fetch_array($query);
 
     $allowed = explode(',', $post['unlocked']);

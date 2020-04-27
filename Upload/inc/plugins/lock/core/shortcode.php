@@ -2,7 +2,9 @@
 
 function lock_hide($params, $content)
 {
-  global $mybb, $post, $templates, $db;
+  global $mybb, $post, $templates, $lang, $db;
+
+  isset($lang->lock) || $lang->load('lock');
 
   // if the tag has no content, do nothing.
 	if (!$content)
@@ -13,7 +15,18 @@ function lock_hide($params, $content)
   // return nothing if the print thread page is viewed
   if(empty($post['pid']))
   {
-    return 'Hidden Content';
+    return $lang->lock_title;
+  }
+
+ 
+	if(!is_array($params))
+	{
+		$params = (array)$params;
+	}
+
+  if(my_strpos($params[0], '=') === 0)
+  {
+    $params['cost'] = (int)str_replace('=', '', $params[0]);
   }
 
   // does the user have to pay for the content?
@@ -22,13 +35,12 @@ function lock_hide($params, $content)
 
     // is the pay to view feature allowed in this forum?
     $disabled = explode(',', $mybb->settings['lock_disabled_forums']);
-    if(!in_array($post['fid'], $disabled))
+    if(!in_array($post['fid'], $disabled) || $mybb->settings['lock_disabled_forums'] == -1)
     {
-
+      
       // does the content have a price? can the user set the price?
       if(!isset($params['cost']) || !(Bool)$mybb->settings['lock_allow_user_prices'])
       {
-
         // if not, do we have a default price?
         if($mybb->settings['lock_default_price'] > 0)
         {
@@ -58,24 +70,22 @@ function lock_hide($params, $content)
     }
   }
 
-  if(!isset($cost))
-  {
+  static $posted = null;
 
+  if(!isset($cost) && $posted === null)
+  {
     // if there's no cost, this must be a "post to view" hide tag
 
     // check to see whether the user has posted in this thread.
-    $query = $db->simple_select('posts', '*', "tid = '{$post['tid']}' AND uid = '{$mybb->user['uid']}'");
+    $query = $db->simple_select('posts', '*', "tid = '{$post['tid']}' AND uid = '{$mybb->user['uid']}'");//  AND visible='1' ?
 
-    if($db->num_rows($query))
-    {
-      $posted = true;
-    }
+    $posted = (bool)$db->num_rows($query);
   }
 
   // if no title has been set, set a default title.
   if(!isset($params['title']))
   {
-    $params['title'] = "Hidden Content";
+    $params['title'] = $lang->lock_title;
   }
 
   // if the user is not the OP, and has not been exempt from having hidden content
@@ -89,7 +99,7 @@ function lock_hide($params, $content)
       if($mybb->user['uid'] == 0)
       {
 
-        $return = "You must <a href=\"{$mybb->settings['bburl']}/member.php?action=register\">register</a> or <a href=\"{$mybb->settings['bburl']}/member.php?action=login\">login</a> to view this content.";
+        $return = $lang->sprintf($lang->lock_nopermission_guest, $mybb->settings['bburl']);
 
       // if they are logged in, but the item has a price that they haven't paid yet, tell them how they can pay for it.
       }
@@ -115,12 +125,10 @@ function lock_hide($params, $content)
         // encrypt the json, and encode it as base64; so it can be submitted in a form.
         $info = base64_encode($pcrypt->encrypt($info));
 
+        $lock_purchase = $lang->sprintf($lang->lock_purchase, newpoints_format_points($cost));
+
         // build the return button.
-        $return = "<form method=\"post\">
-          <button type=\"submit\">Unlock for {$cost} points.</button>
-          <input type=\"hidden\" name=\"info\" value=\"{$info}\" />
-          <input type=\"hidden\" name=\"action\" value=\"purchase\" />
-        </form>";
+        $return = eval($templates->render('lock_form', true, false));
 
       // if the user doesn't need to pay, but hasn't posted
 
@@ -129,7 +137,8 @@ function lock_hide($params, $content)
       {
 
         // tell them to reply to the thread.
-        $return = "You must reply to this thread to view this content.";
+        
+        $return = $lang->lock_nopermission_reply;
 
       // all is good.
       }
@@ -149,11 +158,21 @@ function lock_hide($params, $content)
     $return = $content;
   }
 
-  eval("\$return = \"".$templates->get("lock_wrapper")."\";");
+  $return = eval($templates->render('lock_wrapper', true, false));
 
 	return $return;
 }
 
 // add the hide tag if the shortcodes plugin has been installed.
 
-Shortcodes::add("hide", "lock_hide");
+global $mybb;
+
+switch((string)$mybb->settings['lock_type'])
+{
+  case 'lock':
+    Shortcodes::add("lock", "lock_hide");
+    break;
+  default:
+    Shortcodes::add("hide", "lock_hide");
+    break;
+}
