@@ -161,7 +161,7 @@ function lock_hide($params, $content)
 
         $posts_prices[$post['pid']] = max($posts_prices[$post['pid']], (int)$cost);
 
-        $points = newpoints_format_points($posts_prices[$post['pid']]);
+        $points = strip_tags(newpoints_format_points($posts_prices[$post['pid']]));
 
         $lang_confirm = $lang->sprintf($lang->lock_purchase_confirm, $points);
         $lock_purchase = $lang->sprintf($lang->lock_purchase, $points);
