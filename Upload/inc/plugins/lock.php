@@ -58,7 +58,10 @@ function lock_info()
 		'versioncode'   => 1822,
 		'compatibility' => '18*',
 		'codename'			=> 'ougc_lock',
-    'pl'            => '13',
+		'pl'			=> array(
+			'version'	=> 13,
+			'url'		=> 'https://community.mybb.com/mods.php?action=view&pid=573'
+		)
 	);
 }
 
@@ -117,7 +120,7 @@ function lock_deactivate()
 
   if(!(file_exists(PLUGINLIBRARY) && $PL->version >= $info['pl']))
   {
-    flash_message($lang->sprintf($lang->lock_pluginlibrary, $info['pl']['url'], $info['pl']), 'error');
+    flash_message($lang->sprintf($lang->lock_pluginlibrary, $info['pl']['url'], $info['pl']['version']), 'error');
 		admin_redirect('index.php?module=config-plugins');
   }
 }
