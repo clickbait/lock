@@ -1,5 +1,32 @@
 <?php
 
+/***************************************************************************
+ *
+ *	Lock plugin (/inc/plugins/lock/core/shortcode.php)
+ *	Author: Omar Gonzalez
+ *	Copyright: © 2020 Omar Gonzalez
+ *
+ *	Website: https://ougc.network
+ *
+ *	Lock is a MyBB plugin for hiding content and selling it for your Newpoints currency.
+ *
+ ***************************************************************************
+
+****************************************************************************
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+****************************************************************************/
+
 function lock_hide($params, $content)
 {
   global $mybb, $post, $templates, $lang, $db;
@@ -30,7 +57,7 @@ function lock_hide($params, $content)
   }
 
   // does the user have to pay for the content?
-  if($mybb->settings['lock_purchases_enabled'] == true || (Int)$mybb->settings['lock_default_price'] > 0)
+  if(function_exists('newpoints_format_points') && ($mybb->settings['lock_purchases_enabled'] == true || (Int)$mybb->settings['lock_default_price'] > 0))
   {
 
     // is the pay to view feature allowed in this forum?
@@ -91,19 +118,19 @@ function lock_hide($params, $content)
   // if the user is not the OP, and has not been exempt from having hidden content
   if(
     $mybb->user['uid'] != $post['uid'] &&
-    !in_array($mybb->user['usergroup'], explode(',', $mybb->settings['lock_exempt']))
+    !is_member($mybb->settings['lock_exempt'])
   )
   {
 
       // if the user isn't logged in, tell them to login or register.
-      if($mybb->user['uid'] == 0)
+      if(!$mybb->user['uid'])
       {
 
         $return = $lang->sprintf($lang->lock_nopermission_guest, $mybb->settings['bburl']);
 
       // if they are logged in, but the item has a price that they haven't paid yet, tell them how they can pay for it.
       }
-      elseif(isset($cost) && !$paid)
+      elseif(isset($cost) && !$paid && function_exists('newpoints_format_points'))
       {
 
         // include the pcrypt class, so we can encrypt our data; to keep it safe from spookys.

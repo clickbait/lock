@@ -1,5 +1,32 @@
 <?php
 
+/***************************************************************************
+ *
+ *	Lock plugin (/inc/plugins/lock.php)
+ *	Author: Omar Gonzalez
+ *	Copyright: © 2020 Omar Gonzalez
+ *
+ *	Website: https://ougc.network
+ *
+ *	Lock is a MyBB plugin for hiding content and selling it for your Newpoints currency.
+ *
+ ***************************************************************************
+
+****************************************************************************
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+****************************************************************************/
+
 if(THIS_SCRIPT == 'showthread.php')
 {
   global $templatelist;
@@ -19,16 +46,20 @@ function lock_info()
   global $lang;
   isset($lang->lock) || $lang->load('lock');
 
-  return array(
-    'name' => 'Lock',
-    'description' => $lang->lock_desc,
-    'website' => 'https://github.com/neko',
-    'author' => 'Neko',
-    'authorsite' => 'https://github.com/neko',
-    'version' => '1.1',
-    'compatibility' => '18*',
-    'pl' => '13',
-  );
+  $lang->desc_plugin .= ' This work is forked off the <a href="https://github.com/neko">Lock</a> plugin by <a href="https://community.mybb.com/user-99749.html">Nekomimi</a>.';
+
+	return array(
+		'name'          => 'Lock',
+		'description'   => $lang->lock_desc,
+		'website'       => 'https://ougc.network',
+		'author'        => 'Omar G.',
+		'authorsite'    => 'https://ougc.network',
+		'version'       => '1.8.22',
+		'versioncode'   => 1822,
+		'compatibility' => '18*',
+		'codename'			=> 'ougc_lock',
+    'pl'            => '13',
+	);
 }
 
 if(!defined('IN_ADMINCP'))

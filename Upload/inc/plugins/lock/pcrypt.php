@@ -322,5 +322,3 @@ class pcrypt
         return 1;
     }
 }
-
-?>
