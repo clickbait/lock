@@ -113,12 +113,12 @@ function lock_deactivate()
 
   $info = lock_info();
 
-  if(file_exists(PLUGINLIBRARY))
+  if($file_exists = file_exists(PLUGINLIBRARY))
   {
     $PL or require_once PLUGINLIBRARY;
   }
 
-  if(!(file_exists(PLUGINLIBRARY) && $PL->version >= $info['pl']))
+  if(!$file_exists || $PL->version < $info['pl']['version'])
   {
     flash_message($lang->sprintf($lang->lock_pluginlibrary, $info['pl']['url'], $info['pl']['version']), 'error');
 		admin_redirect('index.php?module=config-plugins');

@@ -27,8 +27,6 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ****************************************************************************/
 
-lock_deactivate();
-
 // Delete settings
 $PL->settings_delete('lock');
 
