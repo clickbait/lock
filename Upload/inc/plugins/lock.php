@@ -140,11 +140,20 @@ function lock_is_installed()
 }
 
 function lock_highlight_start($message) {
-  global $mybb, $replacement;
+  global $mybb, $replacement, $parser;
 
   if(!empty($mybb->input['highlight'])) {
     $replacement = substr(str_shuffle(str_repeat("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWYXZ", 20)), 0, 20);
-    $message = str_replace('hide', $replacement, $message);
+
+    switch((string)$mybb->settings['lock_type'])
+    {
+      case 'lock':
+        $message = str_replace('lock', $replacement, $message);
+        break;
+      default:
+        $message = str_replace('hide', $replacement, $message);
+        break;
+    }
   }
 
   return $message;
@@ -154,7 +163,15 @@ function lock_highlight_end($message) {
   global $mybb, $replacement;
 
   if(!empty($mybb->input['highlight'])) {
-    $message = str_replace($replacement, 'hide', $message);
+    switch((string)$mybb->settings['lock_type'])
+    {
+      case 'lock':
+        $message = str_replace($replacement, 'lock', $message);
+        break;
+      default:
+        $message = str_replace($replacement, 'hide', $message);
+        break;
+    }
   }
 
   return Shortcodes::parse($message);
