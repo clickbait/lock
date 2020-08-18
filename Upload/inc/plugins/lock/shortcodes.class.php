@@ -55,7 +55,18 @@ class Shortcodes {
 	{
 		global $mybb;
 
-		self::$tag = $mybb->settings['lock_type'] == 'hide' ? 'hide' : 'lock';
+		switch((string)$mybb->settings['lock_type'])
+		{
+		  case 'lock':
+			self::$tag = 'lock';
+			break;
+		  case 'cap':
+			self::$tag = 'cap';
+			break;
+		  default:
+		  self::$tag = 'hide';
+			break;
+		}
 	}
 
 	public static function add($shortcode, $function)

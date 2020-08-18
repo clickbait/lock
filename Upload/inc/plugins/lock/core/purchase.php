@@ -64,7 +64,14 @@ if($info = json_decode($json))
 
     Shortcodes::get_higher_price_from_message($post['message'], $higher_price);
 
-    $info->cost = max($higher_price, $info->cost); // too much?
+    if((Bool)$mybb->settings['lock_allow_user_prices'])
+    {
+      $info->cost = max($higher_price, $info->cost); // too much?
+    }
+    else
+    {
+      $params['cost'] = (int)$mybb->settings['lock_default_price'];
+    }
 
     // check whether the current user has already unlocked the content
     $query = $db->simple_select('posts', 'uid,unlocked', "pid='{$info->pid}'");

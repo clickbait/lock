@@ -150,6 +150,9 @@ function lock_highlight_start($message) {
       case 'lock':
         $message = str_replace('lock', $replacement, $message);
         break;
+      case 'cap':
+        $message = str_replace('cap', $replacement, $message);
+        break;
       default:
         $message = str_replace('hide', $replacement, $message);
         break;
@@ -167,6 +170,9 @@ function lock_highlight_end($message) {
     {
       case 'lock':
         $message = str_replace($replacement, 'lock', $message);
+        break;
+      case 'cap':
+        $message = str_replace($replacement, 'cap', $message);
         break;
       default:
         $message = str_replace($replacement, 'hide', $message);

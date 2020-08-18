@@ -66,17 +66,24 @@ function lock_hide($params, $content)
     {
       
       // does the content have a price? can the user set the price?
-      if(!isset($params['cost']) || !(Bool)$mybb->settings['lock_allow_user_prices'])
+      if(!isset($params['cost']))
       {
-        // if not, do we have a default price?
-        if($mybb->settings['lock_default_price'] > 0)
+        if(!empty($params['cost']))
         {
-          $params['cost'] = $mybb->settings['lock_default_price'];
+          // if not, do we have a default price?
+          if($mybb->settings['lock_default_price'] > 0)
+          {
+            $params['cost'] = $mybb->settings['lock_default_price'];
+          }
+          else
+          {
+            $params['cost'] = null;
+          }
         }
-        else
-        {
-          $params['cost'] = null;
-        }
+      }
+      elseif(!(Bool)$mybb->settings['lock_allow_user_prices'] && $mybb->settings['lock_default_price'] > 0)
+      {
+        $params['cost'] = $mybb->settings['lock_default_price'];
       }
 
       // is the cost an actual number?
@@ -163,6 +170,8 @@ function lock_hide($params, $content)
 
         $points = strip_tags(newpoints_format_points($posts_prices[$post['pid']]));
 
+        $user_points = $lang->sprintf($lang->lock_purchase_yougot, strip_tags(newpoints_format_points($mybb->user['newpoints'])));
+
         $lang_confirm = $lang->sprintf($lang->lock_purchase_confirm, $points);
         $lock_purchase = $lang->sprintf($lang->lock_purchase, $points);
 
@@ -197,6 +206,15 @@ function lock_hide($params, $content)
     $return = $content;
   }
 
+  $cost_desc = '';
+
+  if(isset($cost) && function_exists('newpoints_format_points') && !isset($points))
+  {
+    $points = newpoints_format_points($cost);
+
+    $cost_desc = $lang->sprintf($lang->lock_purchase_cost, $points);
+  }
+
   $return = eval($templates->render('lock_wrapper', true, false));
 
 	return $return;
@@ -210,6 +228,9 @@ switch((string)$mybb->settings['lock_type'])
 {
   case 'lock':
     Shortcodes::add("lock", "lock_hide");
+    break;
+  case 'cap':
+    Shortcodes::add("cap", "lock_hide");
     break;
   default:
     Shortcodes::add("hide", "lock_hide");

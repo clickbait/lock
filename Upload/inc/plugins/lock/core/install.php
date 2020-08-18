@@ -84,7 +84,8 @@ $PL->settings('lock', 'Lock Settings', $lang->lock_desc, array(
     'description'	=> $lang->setting_lock_type_desc,
     'optionscode' => 'radio
 hide=Hide
-lock=Lock',
+lock=Lock
+cap=Cap',
     'value' => 'hide',
   ),
 ));
