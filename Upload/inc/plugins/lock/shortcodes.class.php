@@ -1,5 +1,31 @@
 <?php
 
+/***************************************************************************
+ *
+ *	Lock plugin (/inc/plugins/lock/shortcodes.class.php)
+ *	Author: Omar Gonzalez
+ *	Copyright: © 2020 Omar Gonzalez
+ *
+ *	Website: https://ougc.network
+ *
+ *	Lock is a MyBB plugin for hiding content and selling it for your Newpoints currency.
+ *
+ ***************************************************************************
+
+****************************************************************************
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+****************************************************************************/
 
 // stop direct access to the file.
 if(!defined('IN_MYBB'))
@@ -17,11 +43,30 @@ class Shortcodes {
 
 	private static $shortcodes;
 	public static $strict;
+	public static $tag;
 
 	public function _construct()
 	{
 		$shortcodes = Array();
 		$strict = true;
+	}
+
+	public function set_tag()
+	{
+		global $mybb;
+
+		switch((string)$mybb->settings['lock_type'])
+		{
+		  case 'lock':
+			self::$tag = 'lock';
+			break;
+		  case 'cap':
+			self::$tag = 'cap';
+			break;
+		  default:
+		  self::$tag = 'hide';
+			break;
+		}
 	}
 
 	public static function add($shortcode, $function)
@@ -137,4 +182,68 @@ class Shortcodes {
 		return $atts;
 	}
 
+	function validate_post(&$ph)
+	{
+		global $mybb, $lang;
+
+		if(
+			$mybb->usergroup['lock_maxcost'] === '' ||
+			!function_exists('newpoints_format_points') ||
+			$ph->data['uid'] != $mybb->user['uid'] && is_moderator($ph->data['fid']) // but moderators could bypass this in others's posts? ...
+		)
+		{
+			return;
+		}
+
+		self::set_tag();
+	  
+		$message = $ph->data['message'];
+
+		if(
+		  empty(self::$shortcodes) ||
+		  !is_array(self::$shortcodes) ||
+		  my_strpos( $message, "[".self::$tag ) === false
+		)
+		{
+		  return;
+		}
+	
+		Shortcodes::get_higher_price_from_message($message, $price);
+
+		if($price > (int)$mybb->usergroup['lock_maxcost'] && function_exists('newpoints_format_points'))
+		{
+			isset($lang->lock) || $lang->load('lock');
+
+			$cost = newpoints_format_points((int)$mybb->usergroup['lock_maxcost']);
+
+			$ph->set_error($lang->sprintf($lang->lock_permission_maxcost, strip_tags($cost)));
+		}
+	}
+
+	public function get_higher_price_from_message($message, &$higher_price)
+	{
+		self::set_tag();
+
+		$pattern = self::shortcode_regex();
+
+		preg_match_all("/$pattern/s", $message, $matches, PREG_SET_ORDER);
+
+		$higher_price = 0;
+
+		foreach($matches as $match)
+		{
+			if(
+				empty( $match[0] ) ||
+				my_strpos( $match[0], "[".self::$tag."=" ) === false ||
+				!($price = (int)str_replace('=', '', $match[3]))
+			)
+			{
+				continue;
+			}
+
+			$higher_price = max($higher_price, $price);
+		}
+
+		return $higher_price;
+	}
 } // END class Shortcodes

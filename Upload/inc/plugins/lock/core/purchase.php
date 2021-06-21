@@ -1,13 +1,40 @@
 <?php
 
+/***************************************************************************
+ *
+ *	Lock plugin (/inc/plugins/lock/core/purchase.php)
+ *	Author: Omar Gonzalez
+ *	Copyright: © 2020 Omar Gonzalez
+ *
+ *	Website: https://ougc.network
+ *
+ *	Lock is a MyBB plugin for hiding content and selling it for your Newpoints currency.
+ *
+ ***************************************************************************
+
+****************************************************************************
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+****************************************************************************/
+
 // if the action is not purchase, we don't need to continue.
-if($_POST['action'] !== 'purchase')
+if($mybb->input['action'] !== 'purchase')
 {
   return;
 }
 
 // if the purchases functionality has not been enabled, we do not need to continue.
-if($mybb->settings['lock_purchases_enabled'] != true)
+if($mybb->settings['lock_purchases_enabled'] != true || !function_exists('newpoints_format_points'))
 {
   return;
 }
@@ -28,14 +55,26 @@ if($info = json_decode($json))
   // if the data has been successfully turned back into an object.
   if (is_object($info))
   {
-
     // if the cost and post id are not numbers, return an error.
     if(!is_numeric($info->cost) || !is_numeric($info->pid)) {
       error("Something went wrong: NaN");
     }
+  
+    $post = get_post($info->pid);
+
+    Shortcodes::get_higher_price_from_message($post['message'], $higher_price);
+
+    if((Bool)$mybb->settings['lock_allow_user_prices'])
+    {
+      $info->cost = max($higher_price, $info->cost); // too much?
+    }
+    else
+    {
+      $params['cost'] = (int)$mybb->settings['lock_default_price'];
+    }
 
     // check whether the current user has already unlocked the content
-    $query = $db->write_query("SELECT uid,unlocked FROM ".TABLE_PREFIX."posts WHERE pid='{$info->pid}'");
+    $query = $db->simple_select('posts', 'uid,unlocked', "pid='{$info->pid}'");
     $post = $db->fetch_array($query);
 
     $allowed = explode(',', $post['unlocked']);
@@ -107,5 +146,3 @@ if($info = json_decode($json))
     }
   }
 }
-
-?>
